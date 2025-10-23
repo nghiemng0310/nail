@@ -6,8 +6,16 @@ import {
   doc, 
   getDocs,
   getDoc,
-  Timestamp 
+  Timestamp,
+  query,
+  orderBy,
+  limit,
+  startAfter,
+  where,
+  QueryDocumentSnapshot,
+  increment
 } from 'firebase/firestore';
+import type { DocumentData } from 'firebase/firestore';
 import { 
   ref, 
   uploadBytesResumable, 
@@ -81,6 +89,8 @@ export const createImage = async (
     const docRef = await addDoc(collection(db, COLLECTION_NAME), {
       name: data.name,
       image: imageUrl,
+      categories: data.categories || [],
+      likes: 0,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now()
     });
@@ -93,7 +103,7 @@ export const createImage = async (
 };
 
 /**
- * Get all images
+ * Get all images (for admin/management)
  */
 export const getAllImages = async (): Promise<ImageModel[]> => {
   try {
@@ -106,6 +116,8 @@ export const getAllImages = async (): Promise<ImageModel[]> => {
         id: doc.id,
         name: data.name,
         image: data.image,
+        categories: data.categories || [],
+        likes: data.likes || 0,
         createdAt: data.createdAt?.toDate(),
         updatedAt: data.updatedAt?.toDate()
       });
@@ -114,6 +126,132 @@ export const getAllImages = async (): Promise<ImageModel[]> => {
     return images;
   } catch (error) {
     console.error("Error getting images: ", error);
+    throw error;
+  }
+};
+
+/**
+ * Get images with pagination and filtering
+ */
+export interface GetImagesOptions {
+  pageSize?: number;
+  lastDoc?: QueryDocumentSnapshot<DocumentData>;
+  categories?: string[];
+}
+
+export interface GetImagesResult {
+  images: ImageModel[];
+  lastDoc: QueryDocumentSnapshot<DocumentData> | null;
+  hasMore: boolean;
+}
+
+export const getImages = async (
+  options: GetImagesOptions = {}
+): Promise<GetImagesResult> => {
+  try {
+    const { pageSize = 10, lastDoc, categories } = options;
+    const collectionRef = collection(db, COLLECTION_NAME);
+    
+    // Build query
+    let q;
+    
+    if (categories && categories.length > 0) {
+      // Filter by categories - Firebase doesn't support array-contains-any with orderBy without composite index
+      // So we fetch more documents and sort client-side
+      const fetchSize = 100; // Fetch more to have enough for pagination after sorting
+      
+      if (lastDoc) {
+        q = query(
+          collectionRef,
+          where('categories', 'array-contains-any', categories),
+          limit(fetchSize)
+        );
+      } else {
+        q = query(
+          collectionRef,
+          where('categories', 'array-contains-any', categories),
+          limit(fetchSize)
+        );
+      }
+      
+      const querySnapshot = await getDocs(q);
+      const allImages: ImageModel[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        allImages.push({
+          id: doc.id,
+          name: data.name,
+          image: data.image,
+          categories: data.categories || [],
+          likes: data.likes || 0,
+          createdAt: data.createdAt?.toDate(),
+          updatedAt: data.updatedAt?.toDate()
+        });
+      });
+      
+      // Sort by updatedAt desc on client side
+      allImages.sort((a, b) => {
+        const dateA = a.updatedAt?.getTime() || 0;
+        const dateB = b.updatedAt?.getTime() || 0;
+        return dateB - dateA;
+      });
+      
+      // Return all filtered images (up to fetchSize)
+      // No pagination for filtered results to avoid complex composite index setup
+      return {
+        images: allImages,
+        lastDoc: null,
+        hasMore: false
+      };
+    } else {
+      // No filter - use server-side pagination
+      q = query(
+        collectionRef,
+        orderBy('updatedAt', 'desc'),
+        limit(pageSize + 1)
+      );
+      
+      if (lastDoc) {
+        q = query(
+          collectionRef,
+          orderBy('updatedAt', 'desc'),
+          startAfter(lastDoc),
+          limit(pageSize + 1)
+        );
+      }
+      
+      const querySnapshot = await getDocs(q);
+      const images: ImageModel[] = [];
+      const docs = querySnapshot.docs;
+      
+      // Check if there are more documents
+      const hasMore = docs.length > pageSize;
+      const docsToProcess = hasMore ? docs.slice(0, pageSize) : docs;
+      
+      docsToProcess.forEach((doc) => {
+        const data = doc.data();
+        images.push({
+          id: doc.id,
+          name: data.name,
+          image: data.image,
+          categories: data.categories || [],
+          likes: data.likes || 0,
+          createdAt: data.createdAt?.toDate(),
+          updatedAt: data.updatedAt?.toDate()
+        });
+      });
+
+      const lastDocument = docsToProcess.length > 0 ? docsToProcess[docsToProcess.length - 1] : null;
+
+      return {
+        images,
+        lastDoc: lastDocument,
+        hasMore
+      };
+    }
+  } catch (error) {
+    console.error("Error getting images with pagination: ", error);
     throw error;
   }
 };
@@ -132,6 +270,8 @@ export const getImageById = async (id: string): Promise<ImageModel | null> => {
         id: docSnap.id,
         name: data.name,
         image: data.image,
+        categories: data.categories || [],
+        likes: data.likes || 0,
         createdAt: data.createdAt?.toDate(),
         updatedAt: data.updatedAt?.toDate()
       };
@@ -176,6 +316,7 @@ export const updateImage = async (
     await updateDoc(docRef, {
       name: data.name,
       image: imageUrl,
+      categories: data.categories || [],
       updatedAt: Timestamp.now()
     });
   } catch (error) {
@@ -196,6 +337,21 @@ export const deleteImage = async (id: string, imageUrl: string): Promise<void> =
     await deleteImageFromStorage(imageUrl);
   } catch (error) {
     console.error("Error deleting image: ", error);
+    throw error;
+  }
+};
+
+/**
+ * Increment likes for an image
+ */
+export const likeImage = async (id: string): Promise<void> => {
+  try {
+    const docRef = doc(db, COLLECTION_NAME, id);
+    await updateDoc(docRef, {
+      likes: increment(1)
+    });
+  } catch (error) {
+    console.error("Error liking image: ", error);
     throw error;
   }
 };

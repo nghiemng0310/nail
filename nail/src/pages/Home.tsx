@@ -1,20 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Image, Spin, Empty, Input } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
-import { getAllImages } from '../services/imageService';
+import { Image, Spin, Empty, Select, Tag, Button, message } from 'antd';
+import { HeartOutlined } from '@ant-design/icons';
+import { getImages, likeImage } from '../services/imageService';
 import type { ImageModel } from '../types/image';
+import type { GetImagesResult } from '../services/imageService';
+import { IMAGE_CATEGORIES } from '../types/image';
+import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import './Home.css';
 
-
+const { Option } = Select;
 
 const Home: React.FC = () => {
   const [images, setImages] = useState<ImageModel[]>([]);
-  const [filteredImages, setFilteredImages] = useState<ImageModel[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchText, setSearchText] = useState('');
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
-
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  
+  const observerTarget = useRef<HTMLDivElement>(null);
 
   const attachSwipeListeners = () => {
     const wrapper = document.querySelector('.ant-image-preview-wrap');
@@ -44,7 +48,6 @@ const Home: React.FC = () => {
     wrapper.addEventListener('touchmove', handleTouchMove as any);
     wrapper.addEventListener('touchend', handleTouchEnd);
   
-    // Lưu vào wrapper để xoá dễ dàng
     (wrapper as any)._touchHandlers = { handleTouchStart, handleTouchMove, handleTouchEnd };
   };
   
@@ -58,87 +61,117 @@ const Home: React.FC = () => {
     wrapper.removeEventListener('touchend', handlers.handleTouchEnd);
   };
   
-
+  // Load initial images
   useEffect(() => {
-    loadImages();
-  }, []);
+    loadInitialImages();
+  }, [selectedCategories]);
 
+  // Infinite scroll observer
   useEffect(() => {
-    // Add swipe listener when preview is open
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartX.current = e.touches[0].clientX;
-    };
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading && !loadingMore) {
+          loadMoreImages();
+        }
+      },
+      { threshold: 0.1 }
+    );
 
-    const handleTouchMove = (e: TouchEvent) => {
-      touchEndX.current = e.touches[0].clientX;
-    };
-
-    const handleTouchEnd = () => {
-      if (touchStartX.current - touchEndX.current > 50) {
-        // Swipe left - next image
-        handleSwipeLeft();
-      }
-      if (touchEndX.current - touchStartX.current > 50) {
-        // Swipe right - previous image
-        handleSwipeRight();
-      }
-    };
-
-    const previewWrapper = document.querySelector('.ant-image-preview-wrap');
-    if (previewWrapper) {
-      previewWrapper.addEventListener('touchstart', handleTouchStart as any);
-      previewWrapper.addEventListener('touchmove', handleTouchMove as any);
-      previewWrapper.addEventListener('touchend', handleTouchEnd as any);
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
     }
 
     return () => {
-      if (previewWrapper) {
-        previewWrapper.removeEventListener('touchstart', handleTouchStart as any);
-        previewWrapper.removeEventListener('touchmove', handleTouchMove as any);
-        previewWrapper.removeEventListener('touchend', handleTouchEnd as any);
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
       }
     };
-  }, [filteredImages]);
+  }, [hasMore, loading, loadingMore, lastDoc]);
 
-  const handleSwipeLeft = () => {
-    // Trigger next image
-    const nextButton = document.querySelector('.ant-image-preview-switch-right') as HTMLElement;
-    if (nextButton) {
-      nextButton.click();
-    }
-  };
-
-  const handleSwipeRight = () => {
-    // Trigger previous image
-    const prevButton = document.querySelector('.ant-image-preview-switch-left') as HTMLElement;
-    if (prevButton) {
-      prevButton.click();
-    }
-  };
-
-  
-
-  useEffect(() => {
-    if (searchText) {
-      const filtered = images.filter(img =>
-        img.name.toLowerCase().includes(searchText.toLowerCase())
-      );
-      setFilteredImages(filtered);
+  const loadInitialImages = async () => {
+    // Don't show full loading spinner when just filtering
+    const isInitialLoad = images.length === 0;
+    
+    if (isInitialLoad) {
+      setLoading(true);
     } else {
-      setFilteredImages(images);
+      setLoadingMore(true);
     }
-  }, [searchText, images]);
-
-  const loadImages = async () => {
-    setLoading(true);
+    
     try {
-      const data = await getAllImages();
-      setImages(data);
-      setFilteredImages(data);
+      const result: GetImagesResult = await getImages({
+        pageSize: 10,
+        categories: selectedCategories.length > 0 ? selectedCategories : undefined
+      });
+      
+      setImages(result.images);
+      setLastDoc(result.lastDoc);
+      setHasMore(result.hasMore);
     } catch (error) {
       console.error('Error loading images:', error);
+      message.error('Không thể tải hình ảnh');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const loadMoreImages = async () => {
+    if (!hasMore || loadingMore) return;
+    
+    // If filtering by categories, no more images available (loaded all at once)
+    if (selectedCategories.length > 0) return;
+    
+    if (!lastDoc) return;
+
+    setLoadingMore(true);
+    try {
+      const result: GetImagesResult = await getImages({
+        pageSize: 10,
+        lastDoc: lastDoc,
+        categories: undefined
+      });
+      
+      setImages(prev => [...prev, ...result.images]);
+      setLastDoc(result.lastDoc);
+      setHasMore(result.hasMore);
+    } catch (error) {
+      console.error('Error loading more images:', error);
+      message.error('Không thể tải thêm hình ảnh');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const handleCategoryChange = (values: string[]) => {
+    setSelectedCategories(values);
+    setImages([]);
+    setLastDoc(null);
+    setHasMore(true);
+  };
+
+  const handleLike = async (imageId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // Optimistic UI update - always increase
+    setImages(prev => prev.map(img => 
+      img.id === imageId 
+        ? { ...img, likes: img.likes + 1 }
+        : img
+    ));
+
+    try {
+      await likeImage(imageId);
+    } catch (error) {
+      console.error('Error liking image:', error);
+      message.error('Không thể thích hình ảnh');
+      
+      // Revert optimistic update
+      setImages(prev => prev.map(img => 
+        img.id === imageId 
+          ? { ...img, likes: img.likes - 1 }
+          : img
+      ));
     }
   };
 
@@ -157,27 +190,35 @@ const Home: React.FC = () => {
     <div className="home-container">
       <div className="home-header">
         <h1 className="home-title">Thư viện hình ảnh</h1>
-        <div className="search-container">
-          <Input
-            placeholder="Tìm kiếm hình ảnh..."
-            prefix={<SearchOutlined />}
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
+        <div className="filter-container">
+          <Select
+            mode="multiple"
+            placeholder="Lọc theo loại"
+            value={selectedCategories}
+            onChange={handleCategoryChange}
+            style={{ width: '100%', maxWidth: '500px' }}
             allowClear
             size="large"
-          />
+            maxTagCount="responsive"
+          >
+            {IMAGE_CATEGORIES.map(category => (
+              <Option key={category} value={category}>
+                {category}
+              </Option>
+            ))}
+          </Select>
         </div>
       </div>
 
-      {filteredImages.length === 0 ? (
+      {images.length === 0 ? (
         <Empty
-          description={searchText ? 'Không tìm thấy hình ảnh' : 'Chưa có hình ảnh nào'}
+          description={selectedCategories.length > 0 ? 'Không tìm thấy hình ảnh với loại đã chọn' : 'Chưa có hình ảnh nào'}
           style={{ marginTop: '60px' }}
         />
       ) : (
         <>
           <div className="images-count">
-            {filteredImages.length} hình ảnh
+            {images.length} hình ảnh {hasMore && '(còn nữa)'}
           </div>
           <Image.PreviewGroup
   preview={{
@@ -188,14 +229,20 @@ const Home: React.FC = () => {
     },
   }}
 >
-
-            <div className="gallery-grid">
-              {filteredImages.map((image) => (
-                <div key={image.id} className="gallery-item">
+            <div className={`gallery-grid ${loadingMore ? 'loading' : ''}`}>
+              {images.map((image, index) => (
+                <div 
+                  key={image.id} 
+                  className="gallery-item"
+                  style={{
+                    animationDelay: `${index * 0.05}s`
+                  }}
+                >
                   <Image
                     src={image.image}
                     alt={image.name}
                     className="gallery-image"
+                    loading="lazy"
                     placeholder={
                       <div className="image-placeholder">
                         <Spin />
@@ -203,12 +250,49 @@ const Home: React.FC = () => {
                     }
                   />
                   <div className="image-overlay">
+                    <div className="image-info">
                     <div className="image-name">{image.name}</div>
+                      <div className="image-categories">
+                        {image.categories.slice(0, 3).map(cat => (
+                          <Tag key={cat} color="blue" style={{ fontSize: '11px', margin: '2px' }}>
+                            {cat}
+                          </Tag>
+                        ))}
+                        {image.categories.length > 3 && (
+                          <Tag color="default" style={{ fontSize: '11px', margin: '2px' }}>
+                            +{image.categories.length - 3}
+                          </Tag>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      type="text"
+                      icon={<HeartOutlined />}
+                      className="like-button"
+                      onClick={(e) => handleLike(image.id, e)}
+                    >
+                      {image.likes}
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
           </Image.PreviewGroup>
+          
+          {/* Infinite scroll trigger */}
+          <div ref={observerTarget} style={{ height: '20px', margin: '20px 0' }}>
+            {loadingMore && (
+              <div style={{ textAlign: 'center' }}>
+                <Spin />
+                <p style={{ marginTop: '8px', color: '#8c8c8c' }}>Đang tải thêm...</p>
+              </div>
+            )}
+            {!hasMore && images.length > 0 && (
+              <div style={{ textAlign: 'center', color: '#8c8c8c' }}>
+                Đã hiển thị tất cả hình ảnh
+              </div>
+            )}
+          </div>
         </>
       )}
     </div>
@@ -216,4 +300,3 @@ const Home: React.FC = () => {
 };
 
 export default Home;
-

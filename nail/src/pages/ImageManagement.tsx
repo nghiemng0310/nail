@@ -10,7 +10,9 @@ import {
   Image, 
   Space,
   Popconfirm,
-  Progress
+  Progress,
+  Select,
+  Tag
 } from 'antd';
 import { 
   PlusOutlined, 
@@ -20,6 +22,7 @@ import {
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { ImageModel, ImageFormData } from '../types/image';
+import { IMAGE_CATEGORIES } from '../types/image';
 import {
   getAllImages,
   createImage,
@@ -27,6 +30,8 @@ import {
   deleteImage
 } from '../services/imageService';
 import './ImageManagement.css';
+
+const { Option } = Select;
 
 const ImageManagement: React.FC = () => {
   const [images, setImages] = useState<ImageModel[]>([]);
@@ -106,7 +111,8 @@ const ImageManagement: React.FC = () => {
   const handleEdit = (record: ImageModel) => {
     setEditingImage(record);
     form.setFieldsValue({
-      name: record.name
+      name: record.name,
+      categories: record.categories || []
     });
     setFileList([]);
     setUploadProgress(0);
@@ -134,7 +140,8 @@ const ImageManagement: React.FC = () => {
 
       setLoading(true);
       const formData: ImageFormData = {
-        name: values.name
+        name: values.name,
+        categories: values.categories || []
       };
 
       if (editingImage) {
@@ -205,6 +212,32 @@ const ImageManagement: React.FC = () => {
       title: 'Tên',
       dataIndex: 'name',
       key: 'name',
+    },
+    {
+      title: 'Loại',
+      dataIndex: 'categories',
+      key: 'categories',
+      render: (categories: string[]) => (
+        <>
+          {categories && categories.length > 0 ? (
+            categories.map(cat => (
+              <Tag key={cat} color="blue" style={{ marginBottom: '4px' }}>
+                {cat}
+              </Tag>
+            ))
+          ) : (
+            <span style={{ color: '#8c8c8c' }}>-</span>
+          )}
+        </>
+      ),
+    },
+    {
+      title: 'Lượt thích',
+      dataIndex: 'likes',
+      key: 'likes',
+      width: 100,
+      render: (likes: number) => likes || 0,
+      sorter: (a, b) => (a.likes || 0) - (b.likes || 0),
     },
     {
       title: 'Ngày tạo',
@@ -308,6 +341,25 @@ const ImageManagement: React.FC = () => {
             rules={[{ required: true, message: 'Vui lòng nhập tên hình ảnh' }]}
           >
             <Input placeholder="Nhập tên hình ảnh" />
+          </Form.Item>
+
+          <Form.Item
+            name="categories"
+            label="Loại hình ảnh"
+            rules={[{ required: true, message: 'Vui lòng chọn ít nhất một loại' }]}
+          >
+            <Select
+              mode="multiple"
+              placeholder="Chọn loại hình ảnh"
+              allowClear
+              maxTagCount="responsive"
+            >
+              {IMAGE_CATEGORIES.map(category => (
+                <Option key={category} value={category}>
+                  {category}
+                </Option>
+              ))}
+            </Select>
           </Form.Item>
 
           <Form.Item

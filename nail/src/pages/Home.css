@@ -215,7 +215,7 @@
   }
 
   .gallery-grid {
-    column-count: 3;
+    column-count: 2;
     column-gap: 16px;
   }
 
@@ -240,7 +240,7 @@
   }
 
   .gallery-grid {
-    column-count: 4;
+    column-count: 2;
     column-gap: 20px;
   }
 
@@ -260,7 +260,7 @@
 /* Large Desktop */
 @media (min-width: 1440px) {
   .gallery-grid {
-    column-count: 5;
+    column-count: 2;
   }
 }
 

@@ -89,12 +89,13 @@ const Home: React.FC = () => {
   }, [hasMore, loading, loadingMore, lastDoc]);
 
   const loadInitialImages = async () => {
-    // Don't show full loading spinner when just filtering
-    const isInitialLoad = images.length === 0;
+    // Only show full page loading on very first load
+    const isFirstLoad = images.length === 0 && !loading && !loadingMore;
     
-    if (isInitialLoad) {
+    if (isFirstLoad) {
       setLoading(true);
     } else {
+      // When filtering, just show loading on gallery
       setLoadingMore(true);
     }
     
@@ -175,17 +176,6 @@ const Home: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="home-container">
-        <div className="loading-container">
-          <Spin size="large" />
-          <p style={{ marginTop: '16px', color: '#8c8c8c' }}>Đang tải hình ảnh...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="home-container">
       <div className="home-header">
@@ -200,6 +190,7 @@ const Home: React.FC = () => {
             allowClear
             size="large"
             maxTagCount="responsive"
+            disabled={loadingMore}
           >
             {IMAGE_CATEGORIES.map(category => (
               <Option key={category} value={category}>
@@ -210,16 +201,31 @@ const Home: React.FC = () => {
         </div>
       </div>
 
-      {images.length === 0 ? (
+      {loading ? (
+        <div className="loading-container">
+          <Spin size="large" />
+          <p style={{ marginTop: '16px', color: '#8c8c8c' }}>Đang tải hình ảnh...</p>
+        </div>
+      ) : images.length === 0 && !loadingMore ? (
         <Empty
           description={selectedCategories.length > 0 ? 'Không tìm thấy hình ảnh với loại đã chọn' : 'Chưa có hình ảnh nào'}
           style={{ marginTop: '60px' }}
         />
       ) : (
         <>
-          <div className="images-count">
-            {images.length} hình ảnh {hasMore && '(còn nữa)'}
-          </div>
+          {!loadingMore && (
+            <div className="images-count">
+              {images.length} hình ảnh {hasMore && '(còn nữa)'}
+            </div>
+          )}
+          
+          {loadingMore && images.length === 0 && (
+            <div className="loading-container" style={{ minHeight: '200px' }}>
+              <Spin size="large" />
+              <p style={{ marginTop: '16px', color: '#8c8c8c' }}>Đang tải hình ảnh...</p>
+            </div>
+          )}
+          
           <Image.PreviewGroup
   preview={{
     countRender: (current, total) => `${current} / ${total}`,
@@ -229,7 +235,7 @@ const Home: React.FC = () => {
     },
   }}
 >
-            <div className={`gallery-grid ${loadingMore ? 'loading' : ''}`}>
+            <div className={`gallery-grid ${loadingMore && images.length > 0 ? 'loading' : ''}`}>
               {images.map((image, index) => (
                 <div 
                   key={image.id} 

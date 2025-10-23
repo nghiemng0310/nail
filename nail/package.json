@@ -1,7 +1,7 @@
 {
   "name": "nail",
-  "private": true,
   "version": "0.0.0",
+  "homepage": "https://nghiemng0310.github.io/nail/",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,9 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "prettier": "prettier --check \"src/**/(*.tsx|*.ts|*.css|*.scss)\"",
     "prettier:fix": "prettier --write \"src/**/(*.tsx|*.ts|*.css|*.scss)\"",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "engines": {
     "node": ">=20.0"
@@ -29,6 +31,7 @@
     "axios": "^1.7.7",
     "dayjs": "^1.11.13",
     "firebase": "^12.4.0",
+    "gh-pages": "^6.3.0",
     "i18next": "^24.2.0",
     "i18next-react": "^0.2.2",
     "lodash.chunk": "^4.2.0",

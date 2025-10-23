@@ -1,0 +1,59 @@
+.management-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Hide preview toolbar */
+:global(.ant-image-preview-operations) {
+  display: none !important;
+}
+
+/* Hide arrow buttons visually but keep them functional for swipe */
+:global(.ant-image-preview-switch-left),
+:global(.ant-image-preview-switch-right) {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+}
+
+/* Enable touch for swipe */
+:global(.ant-image-preview-img-wrapper) {
+  touch-action: pan-x !important;
+}
+
+:global(.ant-image-preview-img) {
+  user-select: none !important;
+  -webkit-user-drag: none !important;
+}
+
+.management-header {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.management-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #262626;
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .management-container {
+    padding: 32px;
+  }
+
+  .management-header {
+    margin-bottom: 24px;
+  }
+
+  .management-title {
+    font-size: 28px;
+  }
+}
+

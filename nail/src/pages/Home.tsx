@@ -179,7 +179,7 @@ const Home: React.FC = () => {
   return (
     <div className="home-container">
       <div className="home-header">
-        <h1 className="home-title">Thư viện hình ảnh</h1>
+        <h1 className="home-title">Ngọc Nail</h1>
         <div className="filter-container">
           <Select
             mode="multiple"

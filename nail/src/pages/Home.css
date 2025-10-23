@@ -153,10 +153,18 @@
   align-items: flex-end;
   opacity: 0;
   transition: opacity 0.3s ease;
+  pointer-events: none; /* Don't block clicks on mobile */
 }
 
 .gallery-item:hover .image-overlay {
   opacity: 1;
+}
+
+/* Show overlay on mobile/tablet */
+@media (max-width: 1024px) {
+  .image-overlay {
+    opacity: 1;
+  }
 }
 
 .image-info {
@@ -191,6 +199,7 @@
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
+  pointer-events: auto; /* Enable clicks on like button */
   flex-shrink: 0;
   margin-left: 8px;
 }

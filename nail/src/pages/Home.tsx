@@ -17,16 +17,16 @@ const Home: React.FC = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
-  
+
   const observerTarget = useRef<HTMLDivElement>(null);
 
   const attachSwipeListeners = () => {
     const wrapper = document.querySelector('.ant-image-preview-wrap');
     if (!wrapper) return;
-  
+
     let startX = 0;
     let endX = 0;
-  
+
     const handleTouchStart = (e: TouchEvent) => {
       startX = e.touches[0].clientX;
     };
@@ -43,24 +43,24 @@ const Home: React.FC = () => {
         prevBtn?.click();
       }
     };
-  
+
     wrapper.addEventListener('touchstart', handleTouchStart as any);
     wrapper.addEventListener('touchmove', handleTouchMove as any);
     wrapper.addEventListener('touchend', handleTouchEnd);
-  
+
     (wrapper as any)._touchHandlers = { handleTouchStart, handleTouchMove, handleTouchEnd };
   };
-  
+
   const detachSwipeListeners = () => {
     const wrapper = document.querySelector('.ant-image-preview-wrap');
     const handlers = (wrapper as any)?._touchHandlers;
     if (!wrapper || !handlers) return;
-  
+
     wrapper.removeEventListener('touchstart', handlers.handleTouchStart);
     wrapper.removeEventListener('touchmove', handlers.handleTouchMove);
     wrapper.removeEventListener('touchend', handlers.handleTouchEnd);
   };
-  
+
   // Load initial images
   useEffect(() => {
     loadInitialImages();
@@ -91,20 +91,20 @@ const Home: React.FC = () => {
   const loadInitialImages = async () => {
     // Only show full page loading on very first load
     const isFirstLoad = images.length === 0 && !loading && !loadingMore;
-    
+
     if (isFirstLoad) {
       setLoading(true);
     } else {
       // When filtering, just show loading on gallery
       setLoadingMore(true);
     }
-    
+
     try {
       const result: GetImagesResult = await getImages({
         pageSize: 10,
         categories: selectedCategories.length > 0 ? selectedCategories : undefined
       });
-      
+
       setImages(result.images);
       setLastDoc(result.lastDoc);
       setHasMore(result.hasMore);
@@ -119,10 +119,10 @@ const Home: React.FC = () => {
 
   const loadMoreImages = async () => {
     if (!hasMore || loadingMore) return;
-    
+
     // If filtering by categories, no more images available (loaded all at once)
     if (selectedCategories.length > 0) return;
-    
+
     if (!lastDoc) return;
 
     setLoadingMore(true);
@@ -132,7 +132,7 @@ const Home: React.FC = () => {
         lastDoc: lastDoc,
         categories: undefined
       });
-      
+
       setImages(prev => [...prev, ...result.images]);
       setLastDoc(result.lastDoc);
       setHasMore(result.hasMore);
@@ -153,10 +153,10 @@ const Home: React.FC = () => {
 
   const handleLike = async (imageId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     // Optimistic UI update - always increase
-    setImages(prev => prev.map(img => 
-      img.id === imageId 
+    setImages(prev => prev.map(img =>
+      img.id === imageId
         ? { ...img, likes: img.likes + 1 }
         : img
     ));
@@ -166,10 +166,10 @@ const Home: React.FC = () => {
     } catch (error) {
       console.error('Error liking image:', error);
       message.error('Không thể thích hình ảnh');
-      
+
       // Revert optimistic update
-      setImages(prev => prev.map(img => 
-        img.id === imageId 
+      setImages(prev => prev.map(img =>
+        img.id === imageId
           ? { ...img, likes: img.likes - 1 }
           : img
       ));
@@ -218,27 +218,27 @@ const Home: React.FC = () => {
               {images.length} hình ảnh {hasMore && '(còn nữa)'}
             </div>
           )}
-          
+
           {loadingMore && images.length === 0 && (
             <div className="loading-container" style={{ minHeight: '200px' }}>
               <Spin size="large" />
               <p style={{ marginTop: '16px', color: '#8c8c8c' }}>Đang tải hình ảnh...</p>
             </div>
           )}
-          
+
           <Image.PreviewGroup
-  preview={{
-    countRender: (current, total) => `${current} / ${total}`,
-    onVisibleChange: (visible) => {
-      if (visible) attachSwipeListeners();
-      else detachSwipeListeners();
-    },
-  }}
->
+            preview={{
+              countRender: (current, total) => `${current} / ${total}`,
+              onVisibleChange: (visible) => {
+                if (visible) attachSwipeListeners();
+                else detachSwipeListeners();
+              },
+            }}
+          >
             <div className={`gallery-grid ${loadingMore && images.length > 0 ? 'loading' : ''}`}>
               {images.map((image, index) => (
-                <div 
-                  key={image.id} 
+                <div
+                  key={image.id}
                   className="gallery-item"
                   style={{
                     animationDelay: `${index * 0.05}s`
@@ -257,7 +257,7 @@ const Home: React.FC = () => {
                   />
                   <div className="image-overlay">
                     <div className="image-info">
-                    <div className="image-name">{image.name}</div>
+                      <div className="image-name">{image.name}</div>
                       <div className="image-categories">
                         {image.categories.slice(0, 3).map(cat => (
                           <Tag key={cat} color="blue" style={{ fontSize: '11px', margin: '2px' }}>
@@ -284,7 +284,7 @@ const Home: React.FC = () => {
               ))}
             </div>
           </Image.PreviewGroup>
-          
+
           {/* Infinite scroll trigger */}
           <div ref={observerTarget} style={{ height: '20px', margin: '20px 0' }}>
             {loadingMore && (

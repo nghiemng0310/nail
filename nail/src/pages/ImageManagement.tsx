@@ -46,6 +46,10 @@ const ImageManagement: React.FC = () => {
   const [fileList, setFileList] = useState<any[]>([]);
   const observerTarget = useRef<HTMLDivElement>(null);
 
+  // Cấu hình chất lượng ảnh (0.1 - 1.0)
+  // 0.5 = 50%, 0.7 = 70%, 0.9 = 90%
+  const IMAGE_QUALITY = 0.9;
+
   // Load images on component mount
   useEffect(() => {
     loadInitialImages();
@@ -173,7 +177,8 @@ const ImageManagement: React.FC = () => {
           formData,
           file,
           editingImage.image,
-          (progress) => setUploadProgress(progress)
+          (progress) => setUploadProgress(progress),
+          IMAGE_QUALITY
         );
         message.success('Cập nhật hình ảnh thành công');
       } else {
@@ -188,7 +193,8 @@ const ImageManagement: React.FC = () => {
         await createImage(
           formData,
           file,
-          (progress) => setUploadProgress(progress)
+          (progress) => setUploadProgress(progress),
+          IMAGE_QUALITY
         );
         message.success('Tạo hình ảnh thành công');
       }

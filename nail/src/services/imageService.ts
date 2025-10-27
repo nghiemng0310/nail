@@ -13,19 +13,45 @@ import {
   startAfter,
   where,
   QueryDocumentSnapshot,
-  increment
+  increment,
 } from 'firebase/firestore';
 import type { DocumentData } from 'firebase/firestore';
 import { 
   ref, 
   uploadBytesResumable, 
   getDownloadURL, 
-  deleteObject 
+  deleteObject, 
 } from 'firebase/storage';
 import { db, storage } from '../config/firebase';
 import type { ImageModel, ImageFormData } from '../types/image';
-
+import heic2any from "heic2any";
+import imageCompression from "browser-image-compression";
 const COLLECTION_NAME = 'images';
+async function compressImageSmart(file: File) {
+  let imageFile = file;
+
+  // Nếu là HEIC → chỉ convert, không nén
+  if (file.type === 'image/heic' || file.type === 'image/heif') {
+    const blob = await heic2any({
+      blob: file,
+      toType: 'image/jpeg',
+      quality: 1, // giữ nguyên chất lượng gốc
+    });
+    imageFile = new File([blob as BlobPart], file.name.replace(/\.[^/.]+$/, '.jpg'), {
+      type: 'image/jpeg',
+    });
+    return imageFile; // ⬅️ trả về sau khi convert, không nén thêm
+  }
+
+  // Các định dạng khác (JPEG, PNG, …) → nén nhẹ để giảm dung lượng
+  const compressed = await imageCompression(imageFile, {
+    maxSizeMB: 1,
+    initialQuality: 0.6,
+    useWebWorker: true,
+  });
+
+  return compressed;
+}
 
 /**
  * Upload image to Firebase Storage
@@ -79,12 +105,26 @@ export const deleteImageFromStorage = async (imageUrl: string): Promise<void> =>
 export const createImage = async (
   data: ImageFormData,
   file: File,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
+  quality: number = 0.7
 ): Promise<string> => {
   try {
     // Upload image first
-    const imageUrl = await uploadImage(file, onProgress);
 
+    // const imageUrl = await uploadImage(file, onProgress);
+
+
+    const timestamp = Date.now();
+    const fileName = `${timestamp}_${file.name.replace(/\.[^/.]+$/, '')}.webp`;
+    const path = `images/${fileName}`;
+
+    const compressedFile = await compressImageSmart(file);
+    // Resize & upload ảnh (maxWidth = 600px để giảm dung lượng tốt hơn)
+    await resizeAndUploadImage(compressedFile, path, 800, quality, onProgress);
+
+    // Lấy URL download
+    const imageRef = ref(storage, path);
+    const imageUrl = await getDownloadURL(imageRef);
     // Create document in Firestore
     const docRef = await addDoc(collection(db, COLLECTION_NAME), {
       name: data.name,
@@ -292,7 +332,8 @@ export const updateImage = async (
   data: ImageFormData,
   file?: File,
   currentImageUrl?: string,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
+  quality: number = 0.7
 ): Promise<void> => {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
@@ -300,7 +341,16 @@ export const updateImage = async (
 
     // If new file is provided, upload it and delete old one
     if (file) {
-      imageUrl = await uploadImage(file, onProgress);
+      // imageUrl = await uploadImage(file, onProgress);
+
+      const timestamp = Date.now();
+      const fileName = `${timestamp}_${file.name.replace(/\.[^/.]+$/, '')}.webp`;
+      const path = `images/${fileName}`;
+
+      const compressedFile = await compressImageSmart(file);
+      // Resize & upload ảnh (maxWidth = 600px để giảm dung lượng tốt hơn)
+      await resizeAndUploadImage(compressedFile, path, 800, quality, onProgress);
+
       
       // Delete old image from storage
       if (currentImageUrl) {
@@ -355,4 +405,110 @@ export const likeImage = async (id: string): Promise<void> => {
     throw error;
   }
 };
+
+/**
+ * Resize ảnh, convert sang WebP, upload lên Storage có onProgress
+ * @returns URL ảnh đã upload
+ */
+export async function resizeAndUploadImage(
+  file: File,
+  path: string,
+  maxWidth = 500,
+  quality = 0.7,
+  onProgress?: (progress: number) => void
+): Promise<string> {
+  console.log('📸 Original file:', file.name, '| Size:', (file.size / 1024).toFixed(2), 'KB');
+  
+  // Đọc file thành dataURL (tương thích mọi loại ảnh)
+  const dataUrl = await new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target!.result as string);
+    reader.readAsDataURL(file);
+  });
+
+  // Tạo blob ảnh nén
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d', { alpha: false })!; // Disable alpha for better compression
+      
+      // Tính toán kích thước mới, LUÔN resize nếu ảnh lớn hơn maxWidth
+      let targetWidth = img.width;
+      let targetHeight = img.height;
+      
+      // Luôn giảm kích thước nếu lớn hơn maxWidth
+      if (img.width > maxWidth || img.height > maxWidth) {
+        if (img.width > img.height) {
+          targetWidth = maxWidth;
+          targetHeight = (img.height * maxWidth) / img.width;
+        } else {
+          targetHeight = maxWidth;
+          targetWidth = (img.width * maxWidth) / img.height;
+        }
+      }
+      
+      // Làm tròn kích thước để tránh fractional pixels
+      targetWidth = Math.round(targetWidth);
+      targetHeight = Math.round(targetHeight);
+      
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      
+      // Set canvas context properties for better quality
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      
+      // Fill white background (important for images with transparency)
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, targetWidth, targetHeight);
+      
+      // Draw image
+      ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+      
+      console.log('🖼️  Resized from', img.width, 'x', img.height, 'to', targetWidth, 'x', targetHeight);
+      
+      canvas.toBlob(
+        (b) => {
+          if (b) {
+            const sizeKB = (b.size / 1024).toFixed(2);
+            const originalSizeKB = (file.size / 1024).toFixed(2);
+            const reduction = (((file.size - b.size) / file.size) * 100).toFixed(1);
+            console.log('✅ WebP created:', sizeKB, 'KB (reduced', reduction, '% from', originalSizeKB, 'KB)');
+            resolve(b);
+          } else reject(new Error('Failed to create blob'));
+        },
+        'image/webp',
+        quality
+      );
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+
+  // Upload có onProgress
+  const storageRef = ref(storage, path);
+  const uploadTask = uploadBytesResumable(storageRef, blob, {
+    contentType: 'image/webp',
+    cacheControl: 'public,max-age=31536000',
+  });
+
+  return new Promise((resolve, reject) => {
+    uploadTask.on(
+      'state_changed',
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        onProgress?.(progress);
+      },
+      reject,
+      async () => {
+        const url = await getDownloadURL(uploadTask.snapshot.ref);
+        resolve(url);
+      }
+    );
+  });
+}
+
+
+
 

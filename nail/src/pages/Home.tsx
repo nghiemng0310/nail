@@ -6,8 +6,8 @@ import type { ImageModel } from '../types/image';
 import type { GetImagesResult } from '../services/imageService';
 import { IMAGE_CATEGORIES } from '../types/image';
 import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
-import './Home.css';
 import Masonry from 'react-masonry-css';
+import './Home.css';
 
 const breakpointColumnsObj = {
   default: 5,
@@ -243,56 +243,6 @@ const Home: React.FC = () => {
               },
             }}
           >
-            {/* <div className={`gallery-grid ${loadingMore && images.length > 0 ? 'loading' : ''}`}>
-              {images.map((image, index) => (
-                <div
-                  key={image.id}
-                  className="gallery-item"
-                  style={{
-                    animationDelay: `${index * 0.05}s`
-                  }}
-                >
-                  <Image
-                    src={image.image}
-                    alt={image.name}
-                    className="gallery-image"
-                    loading="lazy"
-                    placeholder={
-                      <div className="image-placeholder">
-                        <Spin />
-                      </div>
-                    }
-                  />
-                  <div className="image-overlay">
-                    <div className="image-info">
-                      <div className="image-name">{image.name}</div>
-                      <div className="image-categories">
-                        {image.categories.slice(0, 3).map(cat => (
-                          <Tag key={cat} color="blue" style={{ fontSize: '11px', margin: '2px' }}>
-                            {cat}
-                          </Tag>
-                        ))}
-                        {image.categories.length > 3 && (
-                          <Tag color="default" style={{ fontSize: '11px', margin: '2px' }}>
-                            +{image.categories.length - 3}
-                          </Tag>
-                        )}
-                      </div>
-                    </div>
-                    <Button
-                      type="text"
-                      icon={<HeartOutlined />}
-                      className="like-button"
-                      onClick={(e) => handleLike(image.id, e)}
-                    >
-                      {image.likes}
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div> */}
-
-
             <Masonry
               breakpointCols={breakpointColumnsObj}
               className="gallery-grid"

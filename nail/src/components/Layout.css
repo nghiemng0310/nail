@@ -1,94 +1,48 @@
-.app-layout {
-  min-height: 100vh;
-  background-color: #f0f2f5;
-}
-
-.app-content {
-  padding-bottom: 70px; /* Space for bottom navigation */
-  min-height: calc(100vh - 70px);
-}
-
-.bottom-navigation {
-  position: fixed;
-  bottom: 20px;
+.navigation-bar {
+  position: fixed !important;
+  top: 0;
   left: 0;
   right: 0;
-  height: 60px;
-  background: #ffffff;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
   z-index: 1000;
-  border-top: 1px solid #f0f0f0;
-  border-radius: 20px;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.nav-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 8px;
-  transition: all 0.3s ease;
-  color: #8c8c8c;
-  height: 100%;
-}
-
-.nav-item:hover {
-  background-color: #f5f5f5;
-}
-
-.nav-item.active {
-  color: #1890ff;
-}
-
-.nav-icon {
+.navbar-top .navbar-brand{
+  font-family: 'Lora', serif !important;
   font-size: 24px;
-  margin-bottom: 4px;
-  transition: transform 0.3s ease;
+}
+.navbar-brand{
+  font-family: 'Lora', serif !important;
+  font-size: 24px;
 }
 
-.nav-item.active .nav-icon {
-  transform: scale(1.1);
+.nav-link {
+  font-family: 'Lora', serif !important;
 }
 
-.nav-label {
-  font-size: 12px;
-  font-weight: 500;
+.navbar-top .navbar-brand,
+.navbar-top .nav-link {
+  font-family: 'Lora', serif !important;
+  color: white !important; /* Màu chữ trắng cho nền trong suốt */
 }
 
-/* Responsive styles */
-@media (min-width: 768px) {
-  .bottom-navigation {
-    height: 70px;
-  }
-  
-  .app-content {
-    padding-bottom: 80px;
-  }
-  
-  .nav-icon {
-    font-size: 28px;
-    margin-bottom: 6px;
-  }
-  
-  .nav-label {
-    font-size: 14px;
-  }
+/* Khi ở đầu trang (chưa scroll) */
+.navbar-top {
+  background-color: transparent !important;
+  box-shadow: none !important;
 }
 
-@media (min-width: 1024px) {
-  /* On desktop, can optionally show sidebar instead */
-  .bottom-navigation {
-    max-width: 600px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-radius: 20px 20px 0 0;
-  }
+/* Khi cuộn xuống */
+.navbar-scrolled {
+  background-color: rgba(255, 255, 255, 0.2) !important; /* trong suốt hơn */
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: background-color 0.3s ease, backdrop-filter 0.3s ease;
 }
-
+/* Ẩn khung viền mặc định */
+.navbar-toggler {
+  border: none !important;
+}
 
 

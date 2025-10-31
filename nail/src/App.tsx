@@ -15,9 +15,9 @@ function App() {
       <Router basename="/nail">
         <Layout>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<CustomerHome />} />
             <Route path="/management" element={<ImageManagement />} />
-            <Route path="/customer" element={<CustomerHome />} />
+            <Route path="/home" element={<Home />} />
           </Routes>
         </Layout>
       </Router>

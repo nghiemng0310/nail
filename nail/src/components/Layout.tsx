@@ -44,7 +44,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Nav.Link as={Link} to="/management" eventKey="/management">
                 Quản lý
               </Nav.Link>
-              <Nav.Link as={Link} to="/customer" eventKey="/customer">
+              <Nav.Link as={Link} to="/home" eventKey="/home">
                 Khách hàng
               </Nav.Link>
             </Nav>

@@ -1,0 +1,45 @@
+.row-container{
+  width: 100%;
+}
+.title-row{
+  width: 100%;
+  font-size: 32px;
+  font-weight: 700;
+  color: #000;
+}
+
+.images-row {
+  display: flex;
+  gap: 12px;              /* khoảng cách giữa ảnh */
+  overflow-x: auto;       /* cho phép cuộn ngang */
+  overflow-y: hidden;
+  scroll-behavior: smooth; /* cuộn mượt */
+  padding-bottom: 8px;
+}
+.images-row::-webkit-scrollbar {
+  height: 1px;
+}
+.image-item {
+  flex: 0 0 auto;          /* không co giãn, giữ nguyên kích thước */
+}
+
+.img-item {
+  height: 400px;
+  border-radius: 8px;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.img-item:hover {
+  transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+  .img-item {
+    height: 200px;
+  }
+  .title-row{
+    font-size: 24px;
+  }
+}

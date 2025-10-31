@@ -1,0 +1,134 @@
+.customer-home-container {
+  width: 100%;
+  height: 100%;
+}
+.background-container {
+  background-image: url('../assets/b.jpg');
+  background-size: cover;
+  width: 100%;
+}
+.header-container {
+  width: 100%;
+  padding-top: 100px;
+}
+.header-content{
+  width: 100%;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 100px;
+}
+.header-title{
+  font-size: 56px;
+  font-weight: 700;
+  color: #fff;
+  font-family: 'Lora', serif;
+}
+.header-description{
+  font-size: 28px;
+  font-weight: 400;
+  color: #fff;
+  font-family: 'Lora', serif !important;
+}
+.content-container{
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right,  #ffffff,#b6b8be);
+  display: grid;
+  padding-top: 40px;
+  font-family: 'Lora', serif;
+}
+.filter-container{
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 20px;
+}
+
+.row-container{
+  width: 100% !important;
+  overflow: visible;
+}
+.title-row{
+  width: 100%;
+  font-size: 32px;
+  font-weight: 700;
+  color: #3e3d3a;
+}
+
+.row-boc{
+  width: 100%;
+  overflow: visible;
+}
+.images-row {
+  display: flex;
+  width: 100%;
+  gap: 12px;
+  overflow-x: auto;          /* cho phép cuộn ngang */
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch; /* mượt trên iOS */
+  scroll-snap-type: x mandatory;     /* giúp dừng đúng vị trí từng ảnh */
+  padding: 8px 0;
+  box-sizing: border-box;
+}
+
+.image-item {
+  flex: 0 0 auto;            /* giữ kích thước cố định, không co */
+  width: 300px;              /* chiều rộng mặc định trên desktop */
+  scroll-snap-align: start;  /* dừng chính xác ở đầu ảnh */
+}
+
+.img-item {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+/* Hiệu ứng hover nhẹ */
+.img-item:hover {
+  transform: scale(1.02);
+}
+
+/* ✅ Responsive cho mobile: mỗi item full 100% */
+@media (max-width: 768px) {
+  .image-item {
+    width: 100%; /* full chiều ngang cha */
+  }
+
+  .img-item {
+    height: auto;
+    max-height: 70vh; /* tránh ảnh quá cao */
+  }
+}
+
+
+
+@media (max-width: 768px) {
+  
+  .header-title{
+    font-size: 32px;
+  }
+  .header-description{
+    font-size: 20px;
+  }
+  .header-content{
+    height: 200px;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 50px;
+  }
+  .content-container{
+    padding-top: 20px;
+  }
+  .title-row{
+    font-size: 20px;
+  }
+}

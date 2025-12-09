@@ -4,6 +4,8 @@ import viVN from 'antd/locale/vi_VN';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import ImageManagement from './pages/ImageManagement';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './contexts/AuthContext';
 import './App.css';
 import CustomerHome from './pages/CustomerHome';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -12,15 +14,24 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 function App() {
   return (
     <ConfigProvider locale={viVN}>
-      <Router basename="/nail">
-        <Layout>
-          <Routes>
-            <Route path="/" element={<CustomerHome />} />
-            <Route path="/management" element={<ImageManagement />} />
-            <Route path="/home" element={<Home />} />
-          </Routes>
-        </Layout>
-      </Router>
+      <AuthProvider>
+        <Router basename="/nail">
+          <Layout>
+            <Routes>
+              <Route path="/" element={<CustomerHome />} />
+              <Route 
+                path="/management" 
+                element={
+                  <ProtectedRoute>
+                    <ImageManagement />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route path="/home" element={<Home />} />
+            </Routes>
+          </Layout>
+        </Router>
+      </AuthProvider>
     </ConfigProvider>
   );
 }

@@ -221,7 +221,12 @@ const ImageManagement: React.FC = () => {
     <div className="management-container">
       <div className="management-header">
         <h1 className="management-title">Quản lý hình ảnh</h1>
-        <Button
+        
+        
+      </div>
+      <div>
+
+      <Button
           type="primary"
           icon={<PlusOutlined />}
           onClick={handleCreate}

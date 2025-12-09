@@ -1,5 +1,5 @@
 .management-container {
-  padding: 20px;
+  padding: 80px 20px 20px 20px;
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -161,7 +161,7 @@
 
 @media (min-width: 768px) {
   .management-container {
-    padding: 32px;
+    padding: 100px 32px 32px 32px;
   }
 
   .management-header {

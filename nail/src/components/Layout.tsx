@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { Layout as AntLayout } from 'antd';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { Layout as AntLayout, Button } from 'antd';
+import { LogoutOutlined } from '@ant-design/icons';
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import Container from 'react-bootstrap/Container';
+import { useAuth } from '../contexts/AuthContext';
 import './Layout.css';
 
 const { Content } = AntLayout;
@@ -14,6 +16,8 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuth();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -24,6 +28,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   return (
     <>
@@ -44,9 +53,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Nav.Link as={Link} to="/management" eventKey="/management">
                 Quản lý
               </Nav.Link>
-              <Nav.Link as={Link} to="/home" eventKey="/home">
+              {/* <Nav.Link as={Link} to="/home" eventKey="/home">
                 Khách hàng
-              </Nav.Link>
+              </Nav.Link> */}
+              {isAuthenticated && (
+                <Nav.Item style={{ display: 'flex', alignItems: 'center', marginLeft: '12px' }}>
+                  <Button
+                    type="text"
+                    danger
+                    icon={<LogoutOutlined />}
+                    onClick={handleLogout}
+                    size="small"
+                  >
+                    Đăng xuất
+                  </Button>
+                </Nav.Item>
+              )}
             </Nav>
           </Navbar.Collapse>
         </Container>

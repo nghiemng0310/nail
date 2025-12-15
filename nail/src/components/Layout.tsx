@@ -50,6 +50,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Nav.Link as={Link} to="/" eventKey="/">
                 Trang chủ
               </Nav.Link>
+              <Nav.Link as={Link} to="/nail-gallery" eventKey="/nail-gallery">
+                Mẫu Nail
+              </Nav.Link>
               <Nav.Link as={Link} to="/management" eventKey="/management">
                 Quản lý
               </Nav.Link>

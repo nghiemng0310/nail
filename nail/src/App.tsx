@@ -8,6 +8,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import './App.css';
 import CustomerHome from './pages/CustomerHome';
+import NailGallery from './pages/NailGallery';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 
@@ -19,6 +20,7 @@ function App() {
           <Layout>
             <Routes>
               <Route path="/" element={<CustomerHome />} />
+              <Route path="/nail-gallery" element={<NailGallery />} />
               <Route 
                 path="/management" 
                 element={

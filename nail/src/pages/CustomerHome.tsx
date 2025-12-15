@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Image, Spin, message, Tag } from 'antd';
+import { useNavigate } from 'react-router-dom';
 // import { HeartOutlined } from '@ant-design/icons';
 import { getImages } from '../services/imageService';
 import type { ImageModel } from '../types/image';
@@ -8,6 +9,7 @@ import type { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import Masonry from 'react-masonry-css';
 import './CustomerHome.css';
 import menu from '../assets/menu.png';
+import Footer from '../components/Footer';
 const breakpointColumnsObj = {
   default: 5,
   1440: 5,
@@ -16,6 +18,7 @@ const breakpointColumnsObj = {
   0: 1
 };
 function CustomerHome() {
+  const navigate = useNavigate();
   const [images, setImages] = useState<ImageModel[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -24,6 +27,9 @@ function CustomerHome() {
   const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
 
   const observerTarget = useRef<HTMLDivElement>(null);
+  
+  // Giới hạn hiển thị 10 ảnh trên trang chủ
+  const MAX_IMAGES_HOME = 10;
 
 
   // const attachSwipeListeners = () => {
@@ -95,19 +101,11 @@ function CustomerHome() {
   }, [hasMore, loading, loadingMore, lastDoc]);
 
   const loadInitialImages = async () => {
-    // Only show full page loading on very first load
-    const isFirstLoad = images.length === 0 && !loading && !loadingMore;
-
-    if (isFirstLoad) {
-      setLoading(true);
-    } else {
-      // When filtering, just show loading on gallery
-      setLoadingMore(true);
-    }
+    setLoading(true);
 
     try {
       const result: GetImagesResult = await getImages({
-        pageSize: 10,
+        pageSize: MAX_IMAGES_HOME,
         categories: undefined
       });
 
@@ -119,7 +117,6 @@ function CustomerHome() {
       message.error('Không thể tải hình ảnh');
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   };
 
@@ -218,70 +215,94 @@ function CustomerHome() {
 
 
                 <div className='images-row'>
-                  <div key={'1'} className='image-item'>
-                    <img src={menu} alt='1' className='img-item' loading='lazy' />
+                  <div key={'service-1'} className='image-item'>
+                    <img src={menu} alt='Dịch vụ 1' className='img-item' loading='lazy' />
                   </div> 
-                  <div key={'2'} className='image-item'>
-                    <img src={menu} alt='2' className='img-item' loading='lazy' />
+                  <div key={'service-2'} className='image-item'>
+                    <img src={menu} alt='Dịch vụ 2' className='img-item' loading='lazy' />
                   </div>
-                  <div key={'1'} className='image-item'>
-                    <img src={menu} alt='1' className='img-item' loading='lazy' />
+                  <div key={'service-3'} className='image-item'>
+                    <img src={menu} alt='Dịch vụ 3' className='img-item' loading='lazy' />
                   </div> 
-                  <div key={'2'} className='image-item'>
-                    <img src={menu} alt='2' className='img-item' loading='lazy' />
+                  <div key={'service-4'} className='image-item'>
+                    <img src={menu} alt='Dịch vụ 4' className='img-item' loading='lazy' />
                   </div>
                 </div>
               </div>
             </div>
             <div className='row-container container'>
               <div className='title-row'>| Dành cho chị em</div>
-              <Masonry
-                breakpointCols={breakpointColumnsObj}
-                className="gallery-grid"
-                columnClassName="gallery-grid-column"
-              >
-                {images.map((image, index) => (
-                  <div
-                    key={image.id}
-                    className="gallery-item"
-                    style={{ animationDelay: `${index * 0.05}s` }}
+              
+              {loading ? (
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                  <Spin size="large" />
+                </div>
+              ) : (
+                <>
+                  <Masonry
+                    breakpointCols={breakpointColumnsObj}
+                    className="gallery-grid"
+                    columnClassName="gallery-grid-column"
                   >
-                    <Image
-                      src={image.image}
-                      alt={image.name}
-                      className="gallery-image"
-                      loading="lazy"
-                      placeholder={
-                        <div className="image-placeholder">
-                          <Spin />
-                        </div>
-                      }
-                    />
-                    <div className="image-overlay">
-                      <div className="image-info">
-                        <div className="image-name">{image.name}</div>
-                        <div className="image-categories">
-                          {image.categories.slice(0, 3).map(cat => (
-                            <Tag key={cat} color="blue" style={{ fontSize: '11px', margin: '2px' }}>
-                              {cat}
-                            </Tag>
-                          ))}
-                          {image.categories.length > 3 && (
-                            <Tag color="default" style={{ fontSize: '11px', margin: '2px' }}>
-                              +{image.categories.length - 3}
-                            </Tag>
-                          )}
+                    {images.map((image, index) => (
+                      <div
+                        key={image.id}
+                        className="gallery-item"
+                        style={{ animationDelay: `${index * 0.05}s` }}
+                      >
+                        <Image
+                          src={image.image}
+                          alt={image.name}
+                          className="gallery-image"
+                          loading="lazy"
+                          placeholder={
+                            <div className="image-placeholder">
+                              <Spin />
+                            </div>
+                          }
+                        />
+                        <div className="image-overlay">
+                          <div className="image-info">
+                            <div className="image-name">{image.name}</div>
+                            <div className="image-categories">
+                              {image.categories.slice(0, 3).map(cat => (
+                                <Tag key={cat} color="blue" style={{ fontSize: '11px', margin: '2px' }}>
+                                  {cat}
+                                </Tag>
+                              ))}
+                              {image.categories.length > 3 && (
+                                <Tag color="default" style={{ fontSize: '11px', margin: '2px' }}>
+                                  +{image.categories.length - 3}
+                                </Tag>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
+                    ))}
+                  </Masonry>
+
+                  {/* Nút xem thêm nếu còn nhiều ảnh */}
+                  {hasMore && images.length >= MAX_IMAGES_HOME && (
+                    <div className='view-more-container'>
+                      <button 
+                        className='view-more-btn'
+                        onClick={() => navigate('/nail-gallery')}
+                      >
+                        Xem thêm mẫu nail
+                        <span className='arrow-icon'>→</span>
+                      </button>
                     </div>
-                  </div>
-                ))}
-              </Masonry>
+                  )}
+                </>
+              )}
             </div>
 
           </div>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 }
